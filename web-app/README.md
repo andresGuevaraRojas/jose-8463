@@ -1,32 +1,37 @@
-# React + TypeScript + Vite
+# Aplicación web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación React con registro, inicio de sesión, panel de control, saldo y recargas simuladas. Las gráficas muestran datos ficticios y no ejecutan operaciones reales.
 
-Currently, two official plugins are available:
+## Ejecutar
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs/)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Para verificar el proyecto:
+
+```sh
+npm run build
+npm test
+npm run lint
+```
+
+## Estructura
+
+- `src/pages`: acceso y dashboard.
+- `src/components`: formularios, botones, modal y gráficas.
+- `src/services`: instancia de autenticación y esquemas Zod para registro, acceso y recargas.
+- `src/auth`: cuentas y datos locales cifrados.
+- `src/data`: datos ficticios para las gráficas.
+- `src/types`: modelos de la aplicación.
+
+## Funcionamiento
+
+Al registrar una cuenta se inicia sesión con saldo de $0.00 MXN. Tras recargar la página, la sesión sigue activa, pero se solicita de nuevo la contraseña para desbloquear los datos cifrados. Cerrar sesión conserva la cuenta y el saldo para el siguiente inicio de sesión.
+
+React Router gestiona `/login`, `/register`, `/unlock` y `/dashboard`. El dashboard redirige al acceso o al desbloqueo cuando la sesión no permite mostrar los datos.
+
+La recarga simulada no cobra ni guarda datos de tarjeta. Cualquier número se procesa si el formulario es válido. Se requiere una fecha futura, un CVV de 3 o 4 dígitos y un monto positivo con hasta dos decimales; no hay límite de recarga configurado.
+
+La autenticación y el saldo viven solo en `localStorage` de este navegador. Para un uso productivo se requiere un backend de autenticación y pagos.
