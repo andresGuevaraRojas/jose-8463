@@ -1,122 +1,121 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
+import { Navigate, Route, Routes, useNavigate } from 'react-router'
+import { InvalidCredentialsError, UserAlreadyExistsError } from './auth'
+import type { UserProfile } from './auth'
+import { AuthPage, type AuthFormValues } from './pages/AuthPage'
+import { DashboardPage } from './pages/DashboardPage'
+import { authClient } from './services/authClient'
+import { loginSchema, registrationSchema, unlockSchema } from './services/validationSchemas'
+import type { AppUserData, AuthScreen } from './types/app'
+
+function sessionDestination(): '/login' | '/unlock' | '/dashboard' {
+  if (!authClient.isAuthenticated()) return '/login'
+  return authClient.hasUnlockedVault() ? '/dashboard' : '/unlock'
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const navigate = useNavigate()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [userData, setUserData] = useState<AppUserData | null>(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+  async function loadDashboard() {
+    const [currentProfile, currentData] = await Promise.all([
+      authClient.getCurrentUser(),
+      authClient.getUserData(),
+    ])
+    setProfile(currentProfile)
+    setUserData(currentData)
+    setError('')
+  }
 
-      <div className="ticks"></div>
+  useEffect(() => {
+    if (!authClient.hasUnlockedVault()) return
+    void Promise.all([authClient.getCurrentUser(), authClient.getUserData()])
+      .then(([currentProfile, currentData]) => {
+        setProfile(currentProfile)
+        setUserData(currentData)
+      })
+      .catch(() => {
+        authClient.logout()
+        navigate('/login', { replace: true })
+      })
+  }, [navigate])
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  async function submit(screen: AuthScreen, values: AuthFormValues) {
+    setError('')
+    setBusy(true)
+    try {
+      if (screen === 'register') {
+        const result = registrationSchema.safeParse(values)
+        if (!result.success) throw new Error(result.error.issues[0].message)
+        const { fullName, email, password, confirmation } = result.data
+        await authClient.register({ fullName, email, password, passwordConfirmation: confirmation })
+        await authClient.login({ email, password })
+      } else if (screen === 'unlock') {
+        const result = unlockSchema.safeParse(values)
+        if (!result.success) throw new Error(result.error.issues[0].message)
+        await authClient.unlock(result.data.password)
+      } else {
+        const result = loginSchema.safeParse(values)
+        if (!result.success) throw new Error(result.error.issues[0].message)
+        await authClient.login(result.data)
+      }
+      await loadDashboard()
+      navigate('/dashboard', { replace: true })
+    } catch (cause) {
+      if (cause instanceof UserAlreadyExistsError) setError('Ya existe una cuenta con este correo.')
+      else if (cause instanceof InvalidCredentialsError) setError('Correo o contraseña incorrectos.')
+      else setError(cause instanceof Error ? cause.message : 'No se pudo continuar. Inténtalo de nuevo.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  function logout() {
+    authClient.logout()
+    setProfile(null)
+    setUserData(null)
+    setError('')
+    navigate('/login', { replace: true })
+  }
+
+  async function deposit(amountCents: number) {
+    await authClient.updateUserData((current) => ({
+      balanceCents: current.balanceCents + amountCents,
+      deposits: [{
+        id: crypto.randomUUID(),
+        amountCents,
+        createdAt: new Date().toISOString(),
+      }, ...current.deposits],
+    }))
+    setUserData(await authClient.getUserData())
+  }
+
+  function authPage(screen: AuthScreen) {
+    return <AuthPage
+      key={screen}
+      screen={screen}
+      error={error}
+      busy={busy}
+      onSubmit={(values) => submit(screen, values)}
+      onNavigate={() => setError('')}
+      onLogout={logout}
+    />
+  }
+
+  const destination = sessionDestination()
+  return <Routes>
+    <Route path="/" element={<Navigate to={destination} replace />} />
+    <Route path="/login" element={destination === '/login' ? authPage('login') : <Navigate to={destination} replace />} />
+    <Route path="/register" element={destination === '/login' ? authPage('register') : <Navigate to={destination} replace />} />
+    <Route path="/unlock" element={destination === '/unlock' ? authPage('unlock') : <Navigate to={destination} replace />} />
+    <Route path="/dashboard" element={destination !== '/dashboard' ? <Navigate to={destination} replace /> :
+      profile && userData ? <DashboardPage profile={profile} data={userData} onLogout={logout} onDeposit={deposit} /> :
+        <div role="status" className="grid min-h-screen place-items-center bg-cream text-forest">Cargando tu panel...</div>} />
+    <Route path="*" element={<Navigate to={destination} replace />} />
+  </Routes>
 }
 
 export default App
