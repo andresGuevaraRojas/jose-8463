@@ -14,6 +14,7 @@ interface DashboardPageProps {
   data: AppUserData
   onLogout: () => void
   onDeposit: (amountCents: number) => Promise<void>
+  onStartRace: () => void
 }
 
 function PanelHeader({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
@@ -27,7 +28,7 @@ function PanelHeader({ eyebrow, title, description }: { eyebrow: string; title: 
   </div>
 }
 
-export function DashboardPage({ profile, data, onLogout, onDeposit }: DashboardPageProps) {
+export function DashboardPage({ profile, data, onLogout, onDeposit, onStartRace }: DashboardPageProps) {
   const [payOpen, setPayOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const firstName = profile.fullName.trim().split(/\s+/)[0]
@@ -44,6 +45,7 @@ export function DashboardPage({ profile, data, onLogout, onDeposit }: DashboardP
       <nav aria-label="Navegación principal" className="mt-20">
         <p className="px-3 text-[10px] font-bold tracking-[1.6px] text-[#90b99a]">TU ESPACIO</p>
         <div aria-current="page" className="mt-4 flex h-11 items-center gap-3 rounded-[10px] bg-forest-2 px-4 text-[13px] font-bold"><Icon name="chart" size={18} /> Resumen del día</div>
+        <button type="button" onClick={onStartRace} className="mt-2 flex h-11 w-full items-center gap-3 rounded-[10px] px-4 text-left text-[13px] font-bold text-[#c7ddca] hover:bg-forest-2 hover:text-white"><Icon name="flag" size={18} /> Carreras</button>
       </nav>
       <div className="mt-auto">
         <div className="rounded-[13px] border border-[#386a50] bg-forest-2 p-4"><span className="text-xl text-lime">✳</span><strong className="mt-1 block text-xs">Sin prisa, con emoción.</strong><small className="mt-2 block text-[11px] leading-relaxed text-[#b4d0ba]">Seis carreras simuladas cada día.</small></div>
@@ -69,7 +71,7 @@ export function DashboardPage({ profile, data, onLogout, onDeposit }: DashboardP
         <div className="mt-8 grid gap-5 md:grid-cols-[1.6fr_1fr]">
           <section className="relative min-h-[220px] overflow-hidden rounded-[18px] bg-forest p-7 text-white">
             <div aria-hidden="true" className="absolute -right-10 top-8 size-[250px] rounded-full border-[42px] border-forest-2" />
-            <div className="relative z-10"><p className="flex items-center gap-2 text-[10px] font-bold tracking-[1.4px] text-lime"><Icon name="wallet" size={18} /> TU SALDO DISPONIBLE</p><strong className="mt-4 block text-[43px] leading-none font-extrabold tracking-[-1.5px]">{money(data.balanceCents)}</strong><p className="mt-2 text-xs text-[#bfd5c1]">Listo para cuando quieras participar.</p><PrimaryButton tone="lime" type="button" className="mt-5 !min-h-10 text-xs" onClick={() => setPayOpen(true)}>Cargar saldo</PrimaryButton></div>
+            <div className="relative z-10"><p className="flex items-center gap-2 text-[10px] font-bold tracking-[1.4px] text-lime"><Icon name="wallet" size={18} /> TU SALDO DISPONIBLE</p><strong className="mt-4 block text-[43px] leading-none font-extrabold tracking-[-1.5px]">{money(data.balanceCents)}</strong><p className="mt-2 text-xs text-[#bfd5c1]">Listo para cuando quieras participar.</p><div className="mt-5 flex flex-wrap gap-2"><PrimaryButton tone="lime" type="button" className="!min-h-10 text-xs" onClick={() => setPayOpen(true)}>Cargar saldo</PrimaryButton><button type="button" onClick={onStartRace} className="min-h-10 rounded-[11px] border border-white/25 px-4 text-xs font-bold hover:bg-white/10">Ver carreras</button></div></div>
           </section>
           <section className="relative flex min-h-[220px] gap-4 rounded-[18px] bg-soft p-7">
             <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-lime text-forest"><Icon name="flag" size={25} /></div>

@@ -4,9 +4,10 @@ import { InvalidCredentialsError, UserAlreadyExistsError } from './auth'
 import type { UserProfile } from './auth'
 import { AuthPage, type AuthFormValues } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { RacePage } from './pages/RacePage'
 import { authClient } from './services/authClient'
 import { loginSchema, registrationSchema, unlockSchema } from './services/validationSchemas'
-import type { AppUserData, AuthScreen } from './types/app'
+import type { AppUserData, AuthScreen, BetRecord } from './types/app'
 
 function sessionDestination(): '/login' | '/unlock' | '/dashboard' {
   if (!authClient.isAuthenticated()) return '/login'
@@ -94,6 +95,15 @@ function App() {
     setUserData(await authClient.getUserData())
   }
 
+  async function settleBet(bet: BetRecord) {
+    await authClient.updateUserData((current) => ({
+      ...current,
+      bets: [bet, ...(current.bets ?? [])],
+      balanceCents: current.balanceCents - bet.amountCents + bet.payoutCents,
+    }))
+    setUserData(await authClient.getUserData())
+  }
+
   function authPage(screen: AuthScreen) {
     return <AuthPage
       key={screen}
@@ -113,8 +123,11 @@ function App() {
     <Route path="/register" element={destination === '/login' ? authPage('register') : <Navigate to={destination} replace />} />
     <Route path="/unlock" element={destination === '/unlock' ? authPage('unlock') : <Navigate to={destination} replace />} />
     <Route path="/dashboard" element={destination !== '/dashboard' ? <Navigate to={destination} replace /> :
-      profile && userData ? <DashboardPage profile={profile} data={userData} onLogout={logout} onDeposit={deposit} /> :
+      profile && userData ? <DashboardPage profile={profile} data={userData} onLogout={logout} onDeposit={deposit} onStartRace={() => navigate('/races')} /> :
         <div role="status" className="grid min-h-screen place-items-center bg-cream text-forest">Cargando tu panel...</div>} />
+    <Route path="/races" element={destination !== '/dashboard' ? <Navigate to={destination} replace /> :
+      profile && userData ? <RacePage profile={profile} data={userData} onLogout={logout} onSettleBet={settleBet} /> :
+        <div role="status" className="grid min-h-screen place-items-center bg-cream text-forest">Cargando la carrera...</div>} />
     <Route path="*" element={<Navigate to={destination} replace />} />
   </Routes>
 }
