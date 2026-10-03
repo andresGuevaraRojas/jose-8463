@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { BetInput } from '../types/app.ts'
 
 const fullNameSchema = z.string().trim().refine(
   (name) => name.split(/\s+/).length >= 2,
@@ -50,4 +51,14 @@ export function createPaymentSchema(today = new Date()) {
       }, 'El monto debe ser mayor que $0 MXN.')
       .transform((value) => Math.round(Number(value) * 100)),
   })
+}
+
+export function createBetSchema(availableBalanceCents: number) {
+  return z.object({
+    amount: z.string().trim().min(1, 'Escribe un importe para tu apuesta.')
+      .regex(/^\d+(\.\d{1,2})?$/, 'El importe admite como máximo dos decimales.')
+      .transform((value) => Math.round(Number(value) * 100))
+      .refine((amountCents) => amountCents > 0 && Number.isSafeInteger(amountCents), 'El importe debe ser mayor que $0 MXN.')
+      .refine((amountCents) => amountCents <= availableBalanceCents, 'No alcanza el saldo disponible para esta apuesta.'),
+  }) satisfies z.ZodType<{ amount: number }, BetInput>
 }

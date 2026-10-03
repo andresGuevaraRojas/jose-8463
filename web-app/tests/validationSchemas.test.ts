@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loginSchema, registrationSchema, unlockSchema } from '../src/services/validationSchemas.ts'
+import { createBetSchema, loginSchema, registrationSchema, unlockSchema } from '../src/services/validationSchemas.ts'
 
 const validRegistration = {
   fullName: 'María González',
@@ -32,5 +32,13 @@ describe('validaciones de acceso', () => {
     expect(loginSchema.safeParse({ email: 'mal', password: 'clave' }).success).toBe(false)
     expect(loginSchema.safeParse({ email: 'maria@example.com', password: '' }).success).toBe(false)
     expect(unlockSchema.safeParse({ password: '' }).success).toBe(false)
+  })
+
+  it('valida el importe de una apuesta contra el saldo disponible', () => {
+    const schema = createBetSchema(10_000)
+    expect(schema.parse({ amount: '20.50' }).amount).toBe(2050)
+    expect(schema.safeParse({ amount: '0' }).success).toBe(false)
+    expect(schema.safeParse({ amount: '100.01' }).success).toBe(false)
+    expect(schema.safeParse({ amount: 'importe' }).success).toBe(false)
   })
 })
