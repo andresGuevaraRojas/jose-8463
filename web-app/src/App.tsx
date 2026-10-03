@@ -84,6 +84,7 @@ function App() {
   async function deposit(amountCents: number) {
     await authClient.updateUserData((current) => ({
       balanceCents: current.balanceCents + amountCents,
+      bets: current.bets ?? [],
       deposits: [{
         id: crypto.randomUUID(),
         amountCents,
