@@ -47,7 +47,7 @@ export function RacePage({ profile, data, onLogout, onSettleBet }: RacePageProps
   const navigate = useNavigate()
   const [step, setStep] = useState<FlowStep>('choose')
   const [selectedId, setSelectedId] = useState('rayo')
-  const [amount, setAmount] = useState('20')
+  const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
   const [race, setRace] = useState<SimulatedRace | null>(null)
   const [phase, setPhase] = useState<RacePhase>('ready')

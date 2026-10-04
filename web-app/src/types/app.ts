@@ -14,6 +14,7 @@ export type BetStatus = 'won' | 'lost'
 
 export interface BetRecord {
   id: string
+  sample?: boolean
   snailId: string
   snailName: string
   amountCents: number

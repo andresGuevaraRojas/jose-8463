@@ -1,3 +1,5 @@
+import type { BetRecord } from '../types/app.ts'
+
 export interface RacingSnail {
   id: string
   name: string
@@ -30,4 +32,20 @@ export function runSimulatedRace(random = Math.random): SimulatedRace {
 
 export function currentRaceTimestamp(): string {
   return new Date().toISOString()
+}
+
+export function createInitialBets(now = new Date(), createId: () => string = () => crypto.randomUUID()): BetRecord[] {
+  const winners = ['rayo', 'lola', 'lola', 'frida', 'profesor-baba', 'rayo']
+  return racingSnails.map((snail, index) => ({
+    id: createId(),
+    sample: true,
+    snailId: snail.id,
+    snailName: snail.name,
+    amountCents: 0,
+    odds: snail.odds,
+    winnerId: winners[index],
+    status: winners[index] === snail.id ? 'won' : 'lost',
+    payoutCents: 0,
+    createdAt: now.toISOString(),
+  }))
 }

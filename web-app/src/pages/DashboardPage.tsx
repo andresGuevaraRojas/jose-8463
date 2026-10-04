@@ -6,7 +6,8 @@ import { Icon } from '../components/Icon'
 import { PaymentModal } from '../components/PaymentModal'
 import { PrimaryButton } from '../components/PrimaryButton'
 import { WinsChart } from '../components/WinsChart'
-import { money, simulatedRaceCount } from '../data/simulation'
+import { money } from '../data/simulation'
+import { dashboardStats } from '../services/dashboardStats'
 import type { AppUserData } from '../types/app'
 
 interface DashboardPageProps {
@@ -32,6 +33,7 @@ export function DashboardPage({ profile, data, onLogout, onDeposit, onStartRace 
   const [payOpen, setPayOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const firstName = profile.fullName.trim().split(/\s+/)[0]
+  const stats = dashboardStats(data)
 
   async function deposit(amountCents: number) {
     await onDeposit(amountCents)
@@ -75,14 +77,13 @@ export function DashboardPage({ profile, data, onLogout, onDeposit, onStartRace 
           </section>
           <section className="relative flex min-h-[220px] gap-4 rounded-[18px] bg-soft p-7">
             <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-lime text-forest"><Icon name="flag" size={25} /></div>
-            <div><p className="mt-2 text-[10px] font-bold tracking-[1.2px] text-forest-2">CARRERAS DE HOY</p><strong className="mt-3 block text-[40px] leading-none font-extrabold tracking-tight">{String(simulatedRaceCount).padStart(2, '0')}<span className="ml-1 text-xl text-[#9bad9c]">/ 06</span></strong><p className="mt-4 text-xs text-muted">Resultados simulados del día</p></div>
-            <div aria-hidden="true" className="absolute right-6 bottom-7 flex gap-1">{Array.from({ length: simulatedRaceCount }, (_, index) => <span key={index} className="size-1.5 rounded-full bg-lime" />)}</div>
+            <div><p className="mt-2 text-[10px] font-bold tracking-[1.2px] text-forest-2">CARRERAS DE HOY</p><strong className="mt-3 block text-[40px] leading-none font-extrabold tracking-tight">{String(stats.racesToday).padStart(2, '0')}</strong><p className="mt-4 text-xs text-muted">Resultados simulados y propios del día</p></div>
           </section>
         </div>
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_1.15fr]">
-          <section className="min-h-[334px] rounded-[18px] border border-line bg-white p-6"><PanelHeader eyebrow="RENDIMIENTO" title="Mis apuestas" description="Historial ilustrativo de apuestas ganadas y perdidas." /><DonutChart /></section>
-          <section className="min-h-[334px] rounded-[18px] border border-line bg-white p-6"><PanelHeader eyebrow="EN LA PISTA" title="Victorias por caracol" description="Seis carreras disputadas durante un día simulado." /><WinsChart /></section>
+          <section className="min-h-[334px] rounded-[18px] border border-line bg-white p-6"><PanelHeader eyebrow="RENDIMIENTO" title="Mis apuestas" description="Incluye seis resultados de ejemplo al crear tu cuenta." /><DonutChart won={stats.won} lost={stats.lost} /></section>
+          <section className="min-h-[334px] rounded-[18px] border border-line bg-white p-6"><PanelHeader eyebrow="EN LA PISTA" title="Victorias por caracol" description="Ganadores de las carreras simuladas y propias." /><WinsChart snails={stats.snails} /></section>
         </div>
         <p className="mt-5 flex items-center gap-2 text-[11px] text-muted"><Icon name="shield" size={16} /> Las estadísticas y carreras son simuladas. SnailPay no realiza cobros reales.</p>
       </main>

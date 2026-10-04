@@ -37,6 +37,7 @@ describe('validaciones de acceso', () => {
   it('valida el importe de una apuesta contra el saldo disponible', () => {
     const schema = createBetSchema(10_000)
     expect(schema.parse({ amount: '20.50' }).amount).toBe(2050)
+    expect(schema.safeParse({ amount: '' }).success).toBe(false)
     expect(schema.safeParse({ amount: '0' }).success).toBe(false)
     expect(schema.safeParse({ amount: '100.01' }).success).toBe(false)
     expect(schema.safeParse({ amount: 'importe' }).success).toBe(false)
