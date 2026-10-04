@@ -4,10 +4,10 @@ Proyecto de simulación de apuestas que integra una aplicación web desarrollada
 
 ## Estructura
 
-- `web-app/`: interfaz web para crear una cuenta, consultar el saldo y participar en las apuestas simuladas.
-- `backend/`: API en Express.js que procesa los pagos simulados.
+- [`web-app/`](web-app/): interfaz para crear una cuenta, consultar el saldo y participar en apuestas simuladas. Consulta su [README](web-app/README.md).
+- [`backend/`](backend/): API en Express.js que procesa los pagos simulados. Consulta su [README](backend/README.md).
 
-Cada carpeta tiene su propio `package.json`, por lo que debes instalar las dependencias en ambas.
+Cada proyecto tiene su propio `package.json` y sus propias instrucciones. El [diseño de la interfaz está disponible en Figma](https://www.figma.com/design/kP1HhkGoFmKys7fyd65OpC/Untitled?node-id=0-1&p=f&t=XzgH2jV0jpoMEIvK-0).
 
 ## Requisitos
 
@@ -33,6 +33,20 @@ npm run dev
 ```
 
 Abre [http://localhost:5173](http://localhost:5173) en el navegador. La API se ejecuta en `http://localhost:3000`.
+
+## Probar los pagos simulados
+
+Inicia sesión y abre **Cargar saldo**. Para obtener un pago aprobado, utiliza estos datos de prueba:
+
+- Tarjeta: `1234 1234 1234 1234`
+- Vencimiento: `12/26`
+- CVV: `543`
+- Nombre: cualquier valor no vacío
+- Monto: cualquier cantidad válida mayor que `0` MXN
+
+Para simular un fallo del servicio desde la web, abre [el dashboard con `?snailpayError=system`](http://localhost:5173/dashboard?snailpayError=system) y envía una recarga con los mismos datos. Se mostrará el error sin acreditar saldo. Quita el parámetro de la URL para volver al comportamiento normal.
+
+Si pruebas la API directamente, envía el encabezado `X-SnailPay-Simulate-System-Error: true` a `POST /api/pay`. El [README del backend](backend/README.md) contiene ejemplos de solicitudes y respuestas.
 
 ## Datos locales
 
