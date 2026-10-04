@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { UserProfile } from '../auth'
 import { Brand } from '../components/Brand'
+import { AppSidebar } from '../components/AppSidebar'
 import { DonutChart } from '../components/DonutChart'
 import { Icon } from '../components/Icon'
 import { PaymentModal } from '../components/PaymentModal'
@@ -44,18 +45,7 @@ export function DashboardPage({ profile, data, onLogout, onDeposit, onStartRace,
   }
 
   return <div className="flex min-h-screen bg-cream">
-    <aside className="hidden w-[250px] shrink-0 flex-col bg-forest px-5 py-8 text-white lg:flex">
-      <div className="px-2"><Brand light /></div>
-      <nav aria-label="Navegación principal" className="mt-20">
-        <p className="px-3 text-[10px] font-bold tracking-[1.6px] text-[#90b99a]">TU ESPACIO</p>
-        <div aria-current="page" className="mt-4 flex h-11 items-center gap-3 rounded-[10px] bg-forest-2 px-4 text-[13px] font-bold"><Icon name="chart" size={18} /> Resumen del día</div>
-        <button type="button" onClick={onStartRace} className="mt-2 flex h-11 w-full items-center gap-3 rounded-[10px] px-4 text-left text-[13px] font-bold text-[#c7ddca] hover:bg-forest-2 hover:text-white"><Icon name="flag" size={18} /> Carreras</button>
-      </nav>
-      <div className="mt-auto">
-        <div className="rounded-[13px] border border-[#386a50] bg-forest-2 p-4"><span className="text-xl text-lime">✳</span><strong className="mt-1 block text-xs">Sin prisa, con emoción.</strong><small className="mt-2 block text-[11px] leading-relaxed text-[#b4d0ba]">Seis carreras simuladas cada día.</small></div>
-        <button type="button" onClick={onLogout} className="mt-6 flex items-center gap-3 px-3 py-2 text-[13px] text-[#c7ddca] hover:text-white"><Icon name="logout" size={18} /> Cerrar sesión</button>
-      </div>
-    </aside>
+    <AppSidebar onLogout={onLogout} />
 
     <div className="min-w-0 flex-1">
       <header className="flex h-20 items-center justify-between border-b border-line bg-white px-5 sm:px-8 xl:px-12">

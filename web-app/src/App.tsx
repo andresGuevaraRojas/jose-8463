@@ -4,6 +4,7 @@ import { InvalidCredentialsError, UserAlreadyExistsError } from './auth'
 import type { UserProfile } from './auth'
 import { AuthPage, type AuthFormValues } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { BetsPage } from './pages/BetsPage'
 import { RacePage } from './pages/RacePage'
 import { authClient } from './services/authClient'
 import { creditApprovedPayment, type PaymentReceipt } from './services/paymentService'
@@ -123,6 +124,9 @@ function App() {
     <Route path="/races" element={destination !== '/dashboard' ? <Navigate to={destination} replace /> :
       profile && userData ? <RacePage profile={profile} data={userData} onLogout={logout} onSettleBet={settleBet} /> :
         <div role="status" className="grid min-h-screen place-items-center bg-cream text-forest">Cargando la carrera...</div>} />
+    <Route path="/bets" element={destination !== '/dashboard' ? <Navigate to={destination} replace /> :
+      profile && userData ? <BetsPage profile={profile} data={userData} onLogout={logout} /> :
+        <div role="status" className="grid min-h-screen place-items-center bg-cream text-forest">Cargando tus apuestas...</div>} />
     <Route path="*" element={<Navigate to={destination} replace />} />
   </Routes>
 }
