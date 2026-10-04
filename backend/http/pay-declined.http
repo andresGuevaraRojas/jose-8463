@@ -1,0 +1,16 @@
+# Resultado esperado: HTTP 402, status "rejected", status_detail.code "CARD_DECLINED".
+# El número tiene 16 dígitos, pero no es la tarjeta aprobada de la simulación.
+@baseUrl = http://localhost:3000
+
+POST {{baseUrl}}/api/pay
+Content-Type: application/json
+
+{
+  "card_number": "4000000000000002",
+  "expiry": "12/26",
+  "cvv": "543",
+  "full_name": "Ana",
+  "transaction_amount": 10.25,
+  "payer_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "payer_email": "ana@example.com"
+}

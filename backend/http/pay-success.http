@@ -1,0 +1,15 @@
+# Resultado esperado: HTTP 201, status "approved", status_detail.code "APPROVED".
+@baseUrl = http://localhost:3000
+
+POST {{baseUrl}}/api/pay
+Content-Type: application/json
+
+{
+  "card_number": "1234123412341234",
+  "expiry": "12/26",
+  "cvv": "543",
+  "full_name": "Ana",
+  "transaction_amount": 10.25,
+  "payer_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "payer_email": "ana@example.com"
+}
