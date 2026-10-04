@@ -1,0 +1,17 @@
+# Resultado esperado: HTTP 503, status "error", status_detail.code "SYSTEM_UNAVAILABLE".
+# El mismo cuerpo de una aprobación falla por el encabezado; no se registra ni acredita.
+@baseUrl = http://localhost:3000
+
+POST {{baseUrl}}/api/pay
+Content-Type: application/json
+X-SnailPay-Simulate-System-Error: true
+
+{
+  "card_number": "1234123412341234",
+  "expiry": "12/26",
+  "cvv": "543",
+  "full_name": "Ana",
+  "transaction_amount": 10.25,
+  "payer_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "payer_email": "ana@example.com"
+}
