@@ -25,8 +25,6 @@ export interface BetRecord {
   createdAt: string
 }
 
-export type AuthScreen = 'login' | 'register' | 'unlock'
-
 export interface PaymentInput {
   cardNumber: string
   expiry: string
