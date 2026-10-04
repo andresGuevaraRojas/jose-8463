@@ -1,16 +1,17 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { useAuth } from '../auth/auth-context'
 import { useAuthSubmission } from '../auth/useAuthSubmission'
 import { AuthPanel } from '../components/AuthLayout'
 import { FormField } from '../components/FormField'
 import { registrationSchema } from '../services/validationSchemas'
+import { preserveSnailPayTestMode } from '../services/snailPayTestMode'
 
 export function RegisterPage() {
   const { register } = useAuth()
   const { error, busy, clearError, run } = useAuthSubmission()
   const [values, setValues] = useState({ fullName: '', email: '', password: '', confirmation: '' })
-  const loginPath = '/login'
+  const loginPath = preserveSnailPayTestMode('/login', useLocation().search)
 
   function update(key: keyof typeof values, value: string) {
     setValues((current) => ({ ...current, [key]: value }))

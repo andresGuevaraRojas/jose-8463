@@ -1,10 +1,11 @@
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import type { UserProfile } from '../auth'
 import { AppSidebar } from '../components/AppSidebar'
 import { Brand } from '../components/Brand'
 import { Icon } from '../components/Icon'
 import { money } from '../data/simulation'
 import { racingSnails } from '../services/raceService'
+import { preserveSnailPayTestMode } from '../services/snailPayTestMode'
 import type { AppUserData } from '../types/app'
 
 interface BetsPageProps {
@@ -19,7 +20,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('es-MX', {
 
 export function BetsPage({ profile, data, onLogout }: BetsPageProps) {
   const bets = data.bets ?? []
-  const racesPath = '/races'
+  const racesPath = preserveSnailPayTestMode('/races', useLocation().search)
   return <div className="flex min-h-screen bg-cream">
     <AppSidebar onLogout={onLogout} />
     <div className="min-w-0 flex-1">

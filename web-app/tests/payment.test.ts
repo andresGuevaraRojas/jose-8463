@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { creditApprovedPayment, processPayment, validatePayment } from '../src/services/paymentService.ts'
+import { preserveSnailPayTestMode, simulateSnailPaySystemError } from '../src/services/snailPayTestMode.ts'
 import type { PaymentInput } from '../src/types/app.ts'
 
 const input: PaymentInput = { cardNumber: '1234 1234 1234 1234', expiry: '12/26', cvv: '543', cardholder: 'Ana', amount: '10.25' }
@@ -62,4 +63,17 @@ describe('SnailPay', () => {
     expect(request).toHaveBeenCalledOnce()
   })
 
+  it('provoca el error del sistema solo con el parámetro exacto', async () => {
+    const request = respond(503, {
+      ...approved, status: 'error', status_detail: { code: 'SYSTEM_UNAVAILABLE', message: 'SnailPay no está disponible.' }, authorization_code: null,
+    })
+    await expect(processPayment(input, payer, request, '?snailpayError=system')).rejects.toThrow('SnailPay no está disponible.')
+    expect(vi.mocked(request).mock.calls[0][1]?.headers).toEqual({
+      'Content-Type': 'application/json',
+      'X-SnailPay-Simulate-System-Error': 'true',
+    })
+    expect(simulateSnailPaySystemError('?snailpayError=true')).toBe(false)
+    expect(preserveSnailPayTestMode('/unlock', '?snailpayError=system')).toBe('/unlock?snailpayError=system')
+    expect(preserveSnailPayTestMode('/dashboard', '?snailpayError=true')).toBe('/dashboard')
+  })
 })

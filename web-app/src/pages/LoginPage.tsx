@@ -1,17 +1,18 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { useAuth } from '../auth/auth-context'
 import { useAuthSubmission } from '../auth/useAuthSubmission'
 import { AuthPanel } from '../components/AuthLayout'
 import { FormField } from '../components/FormField'
 import { loginSchema } from '../services/validationSchemas'
+import { preserveSnailPayTestMode } from '../services/snailPayTestMode'
 
 export function LoginPage() {
   const { login } = useAuth()
   const { error, busy, clearError, run } = useAuthSubmission()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const registerPath = '/register'
+  const registerPath = preserveSnailPayTestMode('/register', useLocation().search)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

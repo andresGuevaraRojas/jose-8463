@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { AppUserData, PaymentInput } from '../types/app.ts'
+import { simulateSnailPaySystemError } from './snailPayTestMode.ts'
 import { createPaymentSchema } from './validationSchemas.ts'
 
 export class PaymentValidationError extends Error {}
@@ -53,6 +54,7 @@ export async function processPayment(
   input: PaymentInput,
   payer: PaymentPayer,
   request: typeof fetch = fetch,
+  search = typeof window === 'undefined' ? '' : window.location.search,
 ): Promise<PaymentReceipt> {
   const amountCents = validatePayment(input)
   const normalizedEmail = payer.email.trim().toLowerCase()
@@ -66,6 +68,7 @@ export async function processPayment(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(simulateSnailPaySystemError(search) ? { 'X-SnailPay-Simulate-System-Error': 'true' } : {}),
       },
       body: JSON.stringify({
         card_number: input.cardNumber.replace(/\s/g, ''),
