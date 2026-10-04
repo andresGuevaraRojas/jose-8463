@@ -6,6 +6,7 @@ import { AuthPage, type AuthFormValues } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { RacePage } from './pages/RacePage'
 import { authClient } from './services/authClient'
+import { creditApprovedPayment, type PaymentReceipt } from './services/paymentService'
 import { loginSchema, registrationSchema, unlockSchema } from './services/validationSchemas'
 import type { AppUserData, AuthScreen, BetRecord } from './types/app'
 
@@ -82,16 +83,9 @@ function App() {
     navigate('/login', { replace: true })
   }
 
-  async function deposit(amountCents: number) {
-    await authClient.updateUserData((current) => ({
-      balanceCents: current.balanceCents + amountCents,
-      bets: current.bets ?? [],
-      deposits: [{
-        id: crypto.randomUUID(),
-        amountCents,
-        createdAt: new Date().toISOString(),
-      }, ...current.deposits],
-    }))
+  async function deposit(receipt: PaymentReceipt) {
+    if (authClient.getSession()?.userId !== receipt.payerId) throw new Error('La sesión cambió. Vuelve a iniciar sesión.')
+    await authClient.updateUserData((current) => creditApprovedPayment(current, receipt))
     setUserData(await authClient.getUserData())
   }
 
@@ -117,13 +111,14 @@ function App() {
   }
 
   const destination = sessionDestination()
+  const payerId = authClient.getSession()?.userId ?? ''
   return <Routes>
     <Route path="/" element={<Navigate to={destination} replace />} />
     <Route path="/login" element={destination === '/login' ? authPage('login') : <Navigate to={destination} replace />} />
     <Route path="/register" element={destination === '/login' ? authPage('register') : <Navigate to={destination} replace />} />
     <Route path="/unlock" element={destination === '/unlock' ? authPage('unlock') : <Navigate to={destination} replace />} />
     <Route path="/dashboard" element={destination !== '/dashboard' ? <Navigate to={destination} replace /> :
-      profile && userData ? <DashboardPage profile={profile} data={userData} onLogout={logout} onDeposit={deposit} onStartRace={() => navigate('/races')} /> :
+      profile && userData ? <DashboardPage profile={profile} data={userData} onLogout={logout} onDeposit={deposit} payerId={payerId} onStartRace={() => navigate('/races')} /> :
         <div role="status" className="grid min-h-screen place-items-center bg-cream text-forest">Cargando tu panel...</div>} />
     <Route path="/races" element={destination !== '/dashboard' ? <Navigate to={destination} replace /> :
       profile && userData ? <RacePage profile={profile} data={userData} onLogout={logout} onSettleBet={settleBet} /> :

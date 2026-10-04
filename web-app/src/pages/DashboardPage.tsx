@@ -8,13 +8,15 @@ import { PrimaryButton } from '../components/PrimaryButton'
 import { WinsChart } from '../components/WinsChart'
 import { money } from '../data/simulation'
 import { dashboardStats } from '../services/dashboardStats'
+import type { PaymentReceipt } from '../services/paymentService'
 import type { AppUserData } from '../types/app'
 
 interface DashboardPageProps {
   profile: UserProfile
   data: AppUserData
   onLogout: () => void
-  onDeposit: (amountCents: number) => Promise<void>
+  onDeposit: (receipt: PaymentReceipt) => Promise<void>
+  payerId: string
   onStartRace: () => void
 }
 
@@ -29,16 +31,16 @@ function PanelHeader({ eyebrow, title, description }: { eyebrow: string; title: 
   </div>
 }
 
-export function DashboardPage({ profile, data, onLogout, onDeposit, onStartRace }: DashboardPageProps) {
+export function DashboardPage({ profile, data, onLogout, onDeposit, onStartRace, payerId }: DashboardPageProps) {
   const [payOpen, setPayOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const firstName = profile.fullName.trim().split(/\s+/)[0]
   const stats = dashboardStats(data)
 
-  async function deposit(amountCents: number) {
-    await onDeposit(amountCents)
+  async function deposit(receipt: PaymentReceipt) {
+    await onDeposit(receipt)
     setPayOpen(false)
-    setNotice(`Recarga de ${money(amountCents)} procesada con éxito.`)
+    setNotice(`Recarga de ${money(receipt.amountCents)} procesada con éxito.`)
   }
 
   return <div className="flex min-h-screen bg-cream">
@@ -88,6 +90,6 @@ export function DashboardPage({ profile, data, onLogout, onDeposit, onStartRace 
         <p className="mt-5 flex items-center gap-2 text-[11px] text-muted"><Icon name="shield" size={16} /> Las estadísticas y carreras son simuladas. SnailPay no realiza cobros reales.</p>
       </main>
     </div>
-    {payOpen && <PaymentModal onClose={() => setPayOpen(false)} onSuccess={deposit} />}
+    {payOpen && <PaymentModal onClose={() => setPayOpen(false)} onSuccess={deposit} payer={{ id: payerId, email: profile.email }} />}
   </div>
 }

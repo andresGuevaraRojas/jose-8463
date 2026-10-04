@@ -27,22 +27,13 @@ export const unlockSchema = z.object({
   password: z.string().min(1, 'Escribe tu contraseña.'),
 })
 
-export function createPaymentSchema(today = new Date()) {
+export function createPaymentSchema() {
   return z.object({
-    cardNumber: z.string().trim().min(1, 'Escribe un número de tarjeta.'),
+    cardNumber: z.string().transform((value) => value.replace(/\s/g, '')).pipe(z.string().regex(/^\d{16}$/, 'La tarjeta debe tener 16 dígitos.')),
     expiry: z.string().trim()
-      .regex(/^(\d{2})\/(\d{2})$/, 'Usa el formato MM/AA para el vencimiento.')
-      .refine((value) => {
-        const [month, shortYear] = value.split('/').map(Number)
-        const year = 2000 + shortYear
-        return month >= 1 && month <= 12 &&
-          (year > today.getFullYear() || (year === today.getFullYear() && month >= today.getMonth() + 1))
-      }, 'La tarjeta está vencida o su fecha no es válida.'),
+      .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Usa el formato MM/AA para el vencimiento.'),
     cvv: z.string().trim().regex(/^\d{3,4}$/, 'El CVV debe tener 3 o 4 dígitos.'),
-    cardholder: z.string().trim().refine(
-      (name) => name.split(/\s+/).length >= 2,
-      'Escribe el nombre completo del titular.',
-    ),
+    cardholder: z.string().trim().min(1, 'Escribe el nombre del titular.'),
     amount: z.string().trim().min(1, 'Escribe un monto.')
       .regex(/^\d+(\.\d{1,2})?$/, 'El monto admite como máximo dos decimales.')
       .refine((value) => {

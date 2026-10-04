@@ -1,39 +1,65 @@
-import { describe, expect, it } from 'vitest'
-import { processMockPayment, validatePayment } from '../src/services/paymentService.ts'
+import { describe, expect, it, vi } from 'vitest'
+import { creditApprovedPayment, processPayment, validatePayment } from '../src/services/paymentService.ts'
 import type { PaymentInput } from '../src/types/app.ts'
 
-const validPayment: PaymentInput = {
-  cardNumber: '4242 4242 4242 4242',
-  expiry: '12/30',
-  cvv: '123',
-  cardholder: 'María González',
-  amount: '250.50',
+const input: PaymentInput = { cardNumber: '1234 1234 1234 1234', expiry: '12/26', cvv: '543', cardholder: 'Ana', amount: '10.25' }
+const payer = { id: 'a'.repeat(64), email: 'Ana@Example.com' }
+const approved = {
+  id: 'aabbb89a-ed34-47b6-aabe-e9a5dbadff90', status: 'approved',
+  status_detail: { code: 'APPROVED', message: 'Recarga aprobada.' },
+  transaction_amount: 10.25, date_created: '2026-10-03T12:00:00.000Z',
+  authorization_code: '483210', reference: 'SNP-aabbb89a-ed34-47b6-aabe-e9a5dbadff90',
+  payer_id: payer.id, payer_email: 'ana@example.com',
 }
+const respond = (status: number, body: object) => vi.fn(async () => new Response(JSON.stringify(body), { status })) as typeof fetch
 
-describe('SnailPay simulado', () => {
-  it('convierte una recarga válida a centavos', () => {
-    expect(validatePayment(validPayment, new Date(2026, 9, 1))).toBe(25050)
+describe('SnailPay', () => {
+  it('valida el formato que acepta la API, incluida la fecha fija de prueba', () => {
+    expect(validatePayment(input)).toBe(1025)
+    expect(() => validatePayment({ ...input, cardNumber: '1234' })).toThrow('16 dígitos')
+    expect(() => validatePayment({ ...input, expiry: '13/26' })).toThrow('MM/AA')
+    expect(() => validatePayment({ ...input, amount: '10.001' })).toThrow('dos decimales')
+    expect(() => validatePayment({ ...input, amount: '0' })).toThrow('mayor que $0')
   })
 
-  it('acepta tarjetas de prueba y montos fuera del antiguo límite', () => {
-    expect(validatePayment({ ...validPayment, cardNumber: '1234', amount: '0.01' })).toBe(1)
-    expect(validatePayment({ ...validPayment, cardNumber: '4242 4242 4242 4241', amount: '10001' })).toBe(1000100)
+  it('envía el contrato correcto y acredita un recibo aprobado una sola vez', async () => {
+    const request = respond(201, approved)
+    const receipt = await processPayment(input, payer, request)
+    expect(request).toHaveBeenCalledOnce()
+    const [url, options] = vi.mocked(request).mock.calls[0]
+    expect(url).toBe('/api/pay')
+    expect(options?.headers).toEqual({ 'Content-Type': 'application/json' })
+    expect(JSON.parse(String(options?.body))).toEqual({
+      card_number: '1234123412341234', expiry: '12/26', cvv: '543', full_name: 'Ana',
+      transaction_amount: 10.25, payer_id: payer.id, payer_email: 'ana@example.com',
+    })
+    const initial = { balanceCents: 0, deposits: [], bets: [] }
+    const credited = creditApprovedPayment(initial, receipt)
+    expect(credited).toEqual({ balanceCents: 1025, deposits: [{ id: approved.id, amountCents: 1025, createdAt: approved.date_created }], bets: [] })
+    expect(creditApprovedPayment(credited, receipt)).toBe(credited)
+    expect(JSON.stringify(credited)).not.toContain(input.cardNumber.replaceAll(' ', ''))
   })
 
-  it('rechaza datos incompletos, vencimiento y montos inválidos', () => {
-    expect(() => validatePayment({ ...validPayment, cardNumber: '' })).toThrow('número de tarjeta')
-    expect(() => validatePayment({ ...validPayment, expiry: '01/20' })).toThrow('vencida')
-    expect(() => validatePayment({ ...validPayment, amount: '10.001' })).toThrow('dos decimales')
-    expect(() => validatePayment({ ...validPayment, amount: '0' })).toThrow('mayor que $0')
-    expect(() => validatePayment({ ...validPayment, cvv: '12' })).toThrow('CVV')
-    expect(() => validatePayment({ ...validPayment, cardholder: 'María' })).toThrow('nombre completo')
+  it.each([
+    [400, 'INVALID_REQUEST', 'Datos inválidos.'],
+    [402, 'CARD_DECLINED', 'Tarjeta rechazada.'],
+    [503, 'SYSTEM_UNAVAILABLE', 'Servicio no disponible.'],
+  ])('muestra el mensaje y no entrega recibo ante HTTP %i', async (status, code, message) => {
+    await expect(processPayment(input, payer, respond(status, {
+      ...approved, status: status === 503 ? 'error' : 'rejected',
+      status_detail: { code, message }, authorization_code: null,
+    }))).rejects.toThrow(message)
   })
 
-  it('procesa también la tarjeta antes reservada para rechazos', async () => {
-    await expect(processMockPayment({ ...validPayment, cardNumber: '4000 0000 0000 0002' })).resolves.toBe(25050)
+  it('no acredita una respuesta aprobada para otro usuario o monto', async () => {
+    await expect(processPayment(input, payer, respond(201, { ...approved, payer_id: 'b'.repeat(64) }))).rejects.toThrow('respuesta inesperada')
+    await expect(processPayment(input, payer, respond(201, { ...approved, transaction_amount: 20 }))).rejects.toThrow('respuesta inesperada')
   })
 
-  it('aprueba una tarjeta de prueba sin comprobación de dígito de control', async () => {
-    await expect(processMockPayment({ ...validPayment, cardNumber: '1234', amount: '0.01' })).resolves.toBe(1)
+  it('trata el fallo de red como resultado incierto sin reintento automático', async () => {
+    const request = vi.fn(async () => { throw new Error('Network error') }) as typeof fetch
+    await expect(processPayment(input, payer, request)).rejects.toThrow('No se pudo confirmar')
+    expect(request).toHaveBeenCalledOnce()
   })
+
 })
